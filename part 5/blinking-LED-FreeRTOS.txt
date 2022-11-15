@@ -1,0 +1,53 @@
+#include <Seeed_Arduino_FreeRTOS.h>
+ 
+#define LEDPIN_1 PIN_WIRE_SCL // Left side of Grove Port of Wio Terminal
+#define LEDPIN_2 D0 // Right side of Grove Port of Wio Terminal
+ 
+TaskHandle_t Handle_aTask;
+TaskHandle_t Handle_bTask;
+ 
+// Blinking LED
+static void LED_1(void* pvParameters) {
+    while (1) {
+        digitalWrite(LEDPIN_1, HIGH);
+        delay(1000);
+        digitalWrite(LEDPIN_1, LOW);
+        delay(1000);
+    }
+}
+ 
+// Breathing LED
+static void LED_2(void* pvParameters) {
+    int cnt = 5;
+    while (1) {
+        for (byte value = 0 ; value < 255; value+=cnt) {
+            analogWrite(LEDPIN_2, value);
+            delay(20);
+        }
+        delay(200);
+        for (byte value = 255 ; value > 0; value-=cnt) {
+            analogWrite(LEDPIN_2, value);
+            delay(20);
+        }
+    }
+}
+ 
+void setup() {
+    Serial.begin(115200);
+ 
+    vNopDelayMS(1000); // prevents usb driver crash on startup, do not omit this
+//    while(!Serial);  // Wait for serial terminal to open port before starting program
+ 
+    pinMode(LEDPIN_1, OUTPUT);
+    pinMode(LEDPIN_2, OUTPUT);
+ 
+    xTaskCreate(LED_1,     "Task A",       256, NULL, tskIDLE_PRIORITY + 2, &Handle_aTask);
+    xTaskCreate(LED_2,     "Task B",       256, NULL, tskIDLE_PRIORITY + 1, &Handle_bTask);
+ 
+    // Start the RTOS, this function will never return and will schedule the tasks.
+    vTaskStartScheduler();
+}
+ 
+void loop() {
+ 
+}
